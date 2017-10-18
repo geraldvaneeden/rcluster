@@ -1,0 +1,91 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: r1
+spec:
+  selector:
+    app: r1
+  ports:
+  - protocol: TCP
+    port: 22
+    targetPort: 22
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: r2
+spec:
+  selector:
+    app: r2
+  ports:
+  - protocol: TCP
+    port: 22
+    targetPort: 22
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: r3
+spec:
+  selector:
+    app: r3
+  ports:
+  - protocol: TCP
+    port: 22
+    targetPort: 22
+---
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: r1
+spec:
+  replicas: 1
+  template: 
+    metadata:
+      labels:
+        app: r1
+    spec:
+      containers:
+      - name: r1
+        image: gveeden/rcluster
+        ports:
+        - containerPort: 22
+---
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: r2
+spec:
+  replicas: 1
+  template: 
+    metadata:
+      labels:
+        app: r2
+    spec:
+      containers:
+      - name: r1
+        image: gveeden/rcluster
+        ports:
+        - containerPort: 22
+---
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: r3
+spec:
+  replicas: 1
+  template: 
+    metadata:
+      labels:
+        app: r3
+    spec:
+      containers:
+      - name: r1
+        image: gveeden/rcluster
+        ports:
+        - containerPort: 22
