@@ -1,0 +1,19 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: rcluster-workers
+spec:
+  template: 
+    metadata:
+      labels:
+        app: rcluster-workers
+    spec:
+      tolerations:
+      - key: "node-role.kubernetes.io/master"
+        operator: "Exists"
+        effect: "NoSchedule"
+      containers:
+      - name: rcluster
+        image: gveeden/rcluster
+        ports:
+        - containerPort: 22

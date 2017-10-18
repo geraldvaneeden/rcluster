@@ -10,3 +10,8 @@ install.packages('doRNG', repos = 'http://cran.mirror.ac.za')
 install.packages('doMC', repos = 'http://cran.mirror.ac.za')
 install.packages('MASS', repos = 'http://cran.mirror.ac.za')
 install.packages('sn', repos = 'http://cran.mirror.ac.za')
+
+install.packages('snow', repos = 'http://cran.mirror.ac.za')
+install.packages('doSNOW', repos = 'http://cran.mirror.ac.za')
+install.packages('foreach', repos = 'http://cran.mirror.ac.za')
+install.packages('MASS', repos = 'http://cran.mirror.ac.za')
