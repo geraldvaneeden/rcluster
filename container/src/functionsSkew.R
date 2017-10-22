@@ -20,12 +20,7 @@ library(data.table)
 #Libraries necessary for reproducible, parallel computation.
 library(doMC)
 library(doSNOW)
-<<<<<<< HEAD:container/src/functionsSkew.R
 library(doRNG)
-=======
-library(snowfall)
->>>>>>> 3ddab8f7fbd09cc9c8e1f7deb5b1deb76c63c2a0:container/src/functionsNorm.R
-
 source('editedJomofunction.R')
 
 #Drawing a random smaller complete dataset from the large dataset
