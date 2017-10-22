@@ -7,11 +7,6 @@ spec:
     metadata:
       labels:
         app: rcluster-workers
-      env:
-      - name: MY_POD_IP
-        valueFrom:
-          fieldRef:
-            fieldPath: status.podIP
     spec:
       tolerations:
       - key: "node-role.kubernetes.io/master"
@@ -22,4 +17,8 @@ spec:
         image: gveeden/rcluster
         ports:
         - containerPort: 22
-        
+env:
+  - name: MY_POD_IP
+  valueFrom:
+    fieldRef:
+      fieldPath: status.podIP
