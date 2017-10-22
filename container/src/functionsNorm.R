@@ -20,6 +20,7 @@ library(data.table)
 #Libraries necessary for reproducible, parallel computation.
 library(doRNG)
 library(doSNOW)
+library(snowfall)
 
 source('editedJomofunction.R')
 

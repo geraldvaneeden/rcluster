@@ -15,5 +15,6 @@ RUN Rscript packages.R
 
 ### Inject src
 COPY src /usr/local/src/rscripts
+RUN R CMD INSTALL snowfall_1.84-6.1.tar.gz
 
 CMD ["/user/sbin/sshd", "-D"]

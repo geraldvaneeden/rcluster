@@ -19,7 +19,8 @@ depvar <- noquote(names(Sigma[colnum]))
 
 source('functionsNorm.R')
 
-clus <- makeCluster(c("172.18.0.2", "172.18.0.3", "172.18.0.4"), type = "SOCK")
+#clus <- makeCluster(c("172.18.0.2", "172.18.0.3", "172.18.0.4"), type = "SOCK")
+clus <- sfInit(parallel=TRUE, cpus=14, socketHosts=c("10.2.0.39", "10.2.1.29"), master='10.2.2.62', type="SOCK")
 clusterExport(clus, c("st", "MCAR", "MAR", "MNAR", "regAnalysis", "calcP", "complete", "mice", "mice.impute.pmm", "rmse"))
 
 #CONTINUOUS DATA
