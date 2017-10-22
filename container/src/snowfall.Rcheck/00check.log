@@ -1,0 +1,19 @@
+* using log directory ‘/home/gerald/Dev/rParallelNew/rcluster/container/src/snowfall.Rcheck’
+* using R version 3.3.2 (2016-10-31)
+* using platform: x86_64-pc-linux-gnu (64-bit)
+* using session charset: UTF-8
+* checking for file ‘snowfall/DESCRIPTION’ ... OK
+* checking extension type ... Package
+* this is package ‘snowfall’ version ‘1.84-6.1’
+* checking package namespace information ... OK
+* checking package dependencies ... ERROR
+Package suggested but not available: ‘Rmpi’
+
+The suggested packages are required for a complete check.
+Checking can be attempted without them by setting the environment
+variable _R_CHECK_FORCE_SUGGESTS_ to a false value.
+
+See section ‘The DESCRIPTION file’ in the ‘Writing R Extensions’
+manual.
+* DONE
+Status: 1 ERROR
