@@ -14,11 +14,7 @@ spec:
         effect: "NoSchedule"
       containers:
       - name: rcluster
-        image: gveeden/rcluster
+        image: gveeden/rcluster:latest
+        command: ["/usr/sbin/sshd", "-D"]
         ports:
         - containerPort: 22
-env:
-  - name: MY_POD_IP
-  valueFrom:
-    fieldRef:
-      fieldPath: status.podIP
