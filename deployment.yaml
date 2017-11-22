@@ -22,7 +22,7 @@ spec:
         - containerPort: 22
       nodeSelector:
         node_type: n13
-
+---
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
@@ -47,7 +47,7 @@ spec:
         - containerPort: 22
       nodeSelector:
         node_type: n11
-        
+---
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
@@ -72,7 +72,7 @@ spec:
         - containerPort: 22
       nodeSelector:
         node_type: n10
-
+---
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
@@ -97,3 +97,157 @@ spec:
         - containerPort: 22
       nodeSelector:
         node_type: n9
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: n7-deployment
+  labels:
+    app: n7
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: n7
+  template:
+    metadata:
+      labels:
+        app: n7
+    spec:
+      containers:
+      - name: n7
+        image: gveeden/rcluster:latest
+        command: ["/usr/sbin/sshd", "-D"]
+        ports:
+        - containerPort: 22
+      nodeSelector:
+        node_type: n7
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: n6-deployment
+  labels:
+    app: n6
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: n6
+  template:
+    metadata:
+      labels:
+        app: n6
+    spec:
+      containers:
+      - name: n6
+        image: gveeden/rcluster:latest
+        command: ["/usr/sbin/sshd", "-D"]
+        ports:
+        - containerPort: 22
+      nodeSelector:
+        node_type: n6
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: n5-deployment
+  labels:
+    app: n5
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: n5
+  template:
+    metadata:
+      labels:
+        app: n5
+    spec:
+      containers:
+      - name: n5
+        image: gveeden/rcluster:latest
+        command: ["/usr/sbin/sshd", "-D"]
+        ports:
+        - containerPort: 22
+      nodeSelector:
+        node_type: n5
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: n4-deployment
+  labels:
+    app: n4
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: n4
+  template:
+    metadata:
+      labels:
+        app: n4
+    spec:
+      containers:
+      - name: n4
+        image: gveeden/rcluster:latest
+        command: ["/usr/sbin/sshd", "-D"]
+        ports:
+        - containerPort: 22
+      nodeSelector:
+        node_type: n4
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: n3-deployment
+  labels:
+    app: n3
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: n3
+  template:
+    metadata:
+      labels:
+        app: n3
+    spec:
+      containers:
+      - name: n3
+        image: gveeden/rcluster:latest
+        command: ["/usr/sbin/sshd", "-D"]
+        ports:
+        - containerPort: 22
+      nodeSelector:
+        node_type: n3
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: n2-deployment
+  labels:
+    app: n2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: n2
+  template:
+    metadata:
+      labels:
+        app: n2
+    spec:
+      tolerations:
+      - key: "node-role.kubernetes.io/master"
+        operator: "Exists"
+        effect: "NoSchedule"
+      containers:
+      - name: n2
+        image: gveeden/rcluster:latest
+        command: ["/usr/sbin/sshd", "-D"]
+        ports:
+        - containerPort: 22
+      nodeSelector:
+        node_type: n2
