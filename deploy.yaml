@@ -1,0 +1,22 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: rcluster-deployment
+  labels:
+    app: rcluster
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rcluster
+  template:
+    metadata:
+      labels:
+        app: rcluster
+    spec:
+      containers:
+      - name: rcluster
+        image: gveeden/testcluster:latest
+        command: ["/usr/sbin/sshd", "-D"]
+        ports:
+        - containerPort: 22 

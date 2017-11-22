@@ -2,7 +2,7 @@ FROM rocker/r-base
 WORKDIR /usr/local/src/rscripts
 
 # Setup SSH
-RUN apt-get update && apt-get install -y openssh-server
+RUN apt-get update && apt-get install -y openssh-server && apt-get install nmap
 RUN mkdir /var/run/sshd
 COPY ssh/id_rsa /root/.ssh/id_rsa
 COPY ssh/id_rsa.pub /root/.ssh/id_rsa.pub
@@ -13,8 +13,5 @@ RUN chmod 600 /root/.ssh/id_rsa && chmod 600 /root/.ssh/id_rsa.pub && chmod 600 
 ### Install packages
 COPY src/packages.R /usr/local/src/rscripts/packages.R
 RUN Rscript packages.R
-
-### Inject src
-COPY src /usr/local/src/rscripts
 
 CMD ["/user/sbin/sshd", "-D"]

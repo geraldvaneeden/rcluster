@@ -22,6 +22,7 @@ library(doMC)
 library(doSNOW)
 library(doRNG)
 source('editedJomofunction.R')
+registerDoMC(8)
 
 #Drawing a random smaller complete dataset from the large dataset
 inx <- function(db, obs, vars, n){
@@ -74,7 +75,7 @@ MCAR <- function(db, prob){
 }
 
 #MAR - induces missingness based on whether or not the value to the right, of the value
-#under consideration, is more than 1.5 sd's away from the mean.
+#under consideration, is more than 2 sd's away from the mean.
 MAR <- function(db, prob) {
   x = db
   db2 = x
@@ -85,7 +86,7 @@ MAR <- function(db, prob) {
     mean = mean(x[,2])
     sd = sqrt(var(x[,2]))
     mar   = y
-    y.mar = ifelse((mar<(mean-1.5*sd)) & (mcar<prop.m), NA, y)
+    y.mar = ifelse((mar<(mean-2*sd)) & (mcar<prop.m), NA, y)
     x[,i] <- y.mar
   }
   for(i in 2:(ncol(x)-1)) {
@@ -94,7 +95,7 @@ MAR <- function(db, prob) {
     mean = mean(db2[,i+1])
     sd = sqrt(var(db2[,i+1]))
     mar   = y
-    y.mar = ifelse((mar<(mean-1.5*sd)) & (mcar<prop.m), NA, y)
+    y.mar = ifelse((mar<(mean-2*sd)) & (mcar<prop.m), NA, y)
     x[,i] <- y.mar
   }
   
@@ -112,7 +113,7 @@ MNAR <- function(db, prob) {
     mean = mean(x[,i])
     sd = sqrt(var(x[,i]))
     mnar   = y
-    y.mnar = ifelse((mnar<(mean-1.5*sd)) & (mcar<prop.m), NA, y)
+    y.mnar = ifelse((mnar<(mean-2*sd)) & (mcar<prop.m), NA, y)
     x[,i] <- y.mnar
   }
   return(x)
@@ -152,7 +153,7 @@ genMixedData <- function(baseData, dep_var_discr, no_of_discr_vars) {
   if(dep_var_discr == T){
     #Dicrete Var generation
     pvars <- pnorm(baseData[,1], mean = 4)
-    binomvar <- qbinom(1-pvars, 1, 0.61)
+    binomvar <- qbinom(1-pvars, 1, 0.39)
     dep_var <- binomvar
   }
   else {
@@ -163,7 +164,7 @@ genMixedData <- function(baseData, dep_var_discr, no_of_discr_vars) {
     for(i in 1:no_of_discr_vars){
       #Dicrete Var generation
       pvars <- pnorm(x[,i], mean = 4)
-      binomvar <- qbinom(1-pvars, 1, 0.61)
+      binomvar <- qbinom(1-pvars, 1, 0.39)
       discr_var <- binomvar
       #Array of discrete vars
       bt2 <- cbind(bt2, discr_var)
@@ -383,27 +384,33 @@ neighbour <- function(db, k){
 #knn-imputation upon the newly generated datasets with missing values and produces imputed tables for each type. It does 
 #this n times and averages the estimates calculated for each respective version of the tabel. 
 knnAnalysis <- function(db, n, inx, k){
+  j = 1
   all <- foreach(i=1:n, .combine = rbind.data.frame) %dorng% {
-    d <- st(inx, i)
-    mcar <- MCAR(d, 0.05)
-    mar <- MAR(d, 0.75)
-    mnar <- MNAR(d, 0.75)
-    regCOM <- regAnalysis(d)
-    regMCAR <- regAnalysis(mcar)
-    regMAR <- regAnalysis(mar)
-    regMNAR <- regAnalysis(mnar)
-    ImpMCAR <- neighbour(mcar, k)
-    ImpMAR <- neighbour(mar, k)
-    ImpMNAR <- neighbour(mnar, k)
-    regImpMCAR <- regAnalysis(ImpMCAR)
-    regImpMAR <- regAnalysis(ImpMAR)
-    regImpMNAR <- regAnalysis(ImpMNAR)
-    rmseMCAR <- rmse(d,ImpMCAR)
-    rmseMAR <- rmse(d,ImpMAR)
-    rmseMNAR <- rmse(d,ImpMNAR)
-    x <- cbind.data.frame(regCOM[[1]][1,1],regCOM[[1]][1,2], regMCAR[[1]][1,1],regMCAR[[1]][1,2], regMAR[[1]][1,1],regMAR[[1]][1,2], regMNAR[[1]][1,1],regMNAR[[1]][1,2], regImpMCAR[[1]][1,1],regImpMCAR[[1]][1,2], regImpMAR[[1]][1,1],regImpMAR[[1]][1,2], regImpMNAR[[1]][1,1],regImpMNAR[[1]][1,2], rmseMCAR, rmseMAR, rmseMNAR)
-    y <- cbind.data.frame("coefficients"=c("Estimates difference", "Std Err difference", "t-value difference"), "ImpMCAR" = colSums(regCOM[[2]][2:nrow(regCOM[[2]]),1:3] - regImpMCAR[[2]][2:nrow(regImpMCAR[[2]]),1:3]), "ImpMAR" = colSums(regCOM[[2]][2:nrow(regCOM[[2]]),1:3] - regImpMAR[[2]][2:nrow(regImpMAR[[2]]),1:3]), "ImpMNAR" = colSums(regCOM[[2]][2:nrow(regCOM[[2]]),1:3] - regImpMNAR[[2]][2:nrow(regImpMNAR[[2]]),1:3]))
-    cbind(x, y)
+    registerDoMC(8)
+    eight <- foreach(k=j:(7+j), .combine = rbind.data.frame) %dorng% {
+      d <- st(inx, k)
+      mcar <- MCAR(d, 0.05)
+      mar <- MAR(d, 0.75)
+      mnar <- MNAR(d, 0.75)
+      regCOM <- regAnalysis(d)
+      regMCAR <- regAnalysis(mcar)
+      regMAR <- regAnalysis(mar)
+      regMNAR <- regAnalysis(mnar)
+      ImpMCAR <- neighbour(mcar, k)
+      ImpMAR <- neighbour(mar, k)
+      ImpMNAR <- neighbour(mnar, k)
+      regImpMCAR <- regAnalysis(ImpMCAR)
+      regImpMAR <- regAnalysis(ImpMAR)
+      regImpMNAR <- regAnalysis(ImpMNAR)
+      rmseMCAR <- rmse(d,ImpMCAR)
+      rmseMAR <- rmse(d,ImpMAR)
+      rmseMNAR <- rmse(d,ImpMNAR)
+      x <- cbind.data.frame(regCOM[[1]][1,1],regCOM[[1]][1,2], regMCAR[[1]][1,1],regMCAR[[1]][1,2], regMAR[[1]][1,1],regMAR[[1]][1,2], regMNAR[[1]][1,1],regMNAR[[1]][1,2], regImpMCAR[[1]][1,1],regImpMCAR[[1]][1,2], regImpMAR[[1]][1,1],regImpMAR[[1]][1,2], regImpMNAR[[1]][1,1],regImpMNAR[[1]][1,2], rmseMCAR, rmseMAR, rmseMNAR)
+      y <- cbind.data.frame("coefficients"="Estimates difference", "ImpMCAR" = mean(abs(regImpMCAR[[2]][2:nrow(regImpMCAR[[2]]),1] / regCOM[[2]][2:nrow(regCOM[[2]]),1])), "ImpMAR" = mean(abs(regImpMAR[[2]][2:nrow(regImpMAR[[2]]),1] / regCOM[[2]][2:nrow(regCOM[[2]]),1])), "ImpMNAR" = mean(abs(regImpMNAR[[2]][2:nrow(regImpMNAR[[2]]),1] / regCOM[[2]][2:nrow(regCOM[[2]]),1])))
+      cbind(x, y)
+    }
+    j = j+8
+    rbind(eight)
   }
   vars.rs <- rbind(matrix(rep("COM", 1000), ncol = 1), matrix(rep("MCAR", 1000), ncol = 1), matrix(rep("MAR", 1000), ncol = 1), matrix(rep("MNAR", 1000), ncol = 1), matrix(rep("impMCAR", 1000), ncol = 1), matrix(rep("impMAR", 1000), ncol = 1), matrix(rep("impMNAR", 1000), ncol = 1))
   tab1.rs <- data.frame("ID" = vars.rs, "value" = melt(all[!duplicated(all[,c(1,3,5,7,9,11,13)]), c(1,3,5,7,9,11,13)])[,2])
@@ -428,10 +435,12 @@ knnAnalysis <- function(db, n, inx, k){
   rsqDiff <- data.frame("diffMAR" = tab1.rs[1:1000,2]-tab1.rs[5001:6000,2], "diffMCAR" = tab1.rs[1:1000,2]-tab1.rs[4001:5000,2], "diffMNAR" = tab1.rs[1:1000,2]-tab1.rs[6001:7000,2])
   rsq <- matrix(c(rbind("COM", "impMAR", "impMCAR", "impNMAR", "MAR", "MCAR", "NMAR"), rsquared, sd.rs, pvalue), nrow = 7, ncol = 4)
   lin.coefficients <- t(cbind.data.frame("Coefficients" = aggregate(all[,19] ~ all[,18], all[18:21], mean)[,1], "ImpMCAR" = aggregate(all[,19] ~ all[,18], all[18:21], mean)[,2], "ImpMAR" = aggregate(all[,20] ~ all[,18], all[18:21], mean)[,2], "ImpMNAR" = aggregate(all[,21] ~ all[,18], all[18:21], mean)[,2])[,2:4])
-  colnames(lin.coefficients) <- c("Estimate difference", "Std Err difference", "t-value difference")
+  lin.coefficients.sd <- t(cbind.data.frame("Coefficients" = aggregate(all[,19] ~ all[,18], all[18:21], sd)[,1], "ImpMCAR" = aggregate(all[,19] ~ all[,18], all[18:21], sd)[,2], "ImpMAR" = aggregate(all[,20] ~ all[,18], all[18:21], sd)[,2], "ImpMNAR" = aggregate(all[,21] ~ all[,18], all[18:21], sd)[,2])[,2:4])
+  colnames(lin.coefficients) <- c("Estimate ratio mean")
+  colnames(lin.coefficients.sd) <- c("Estimate ratio sd")
   rmse.vars <- rbind(matrix(rep("rmseMCAR", 1000), ncol = 1), matrix(rep("rmseMAR", 1000), ncol = 1), matrix(rep("rmseMNAR", 1000), ncol = 1))
   rmseAll <- data.frame("ID" = rmse.vars, "value" = melt(all[!duplicated(all[,c(15,16,17)]), c(15,16,17)])[,2])
-  return(list(rsq, tab1.rs, rsqDiff, rmseAll, lin.coefficients))
+  return(list(rsq, tab1.rs, rsqDiff, rmseAll, lin.coefficients, lin.coefficients.sd))
 }
 
 #Calls logAnalysis on a certain complete table as well as its MCAR, MAR and MNAR versions and the function also performs 
@@ -597,7 +606,7 @@ jomoAnalysis <- function(db, n, inx){
     rmseMAR <- rmse(d,ImpMAR)
     rmseMNAR <- rmse(d,ImpMNAR)
     x <- cbind.data.frame(regCOM[[1]][1,1],regCOM[[1]][1,2], regMCAR[[1]][1,1],regMCAR[[1]][1,2], regMAR[[1]][1,1],regMAR[[1]][1,2], regMNAR[[1]][1,1],regMNAR[[1]][1,2], regImpMCAR[[1]][1,1],regImpMCAR[[1]][1,2], regImpMAR[[1]][1,1],regImpMAR[[1]][1,2], regImpMNAR[[1]][1,1],regImpMNAR[[1]][1,2], rmseMCAR, rmseMAR, rmseMNAR)
-    y <- cbind.data.frame("coefficients"=c("Estimates difference", "Std Err difference", "t-value difference"), "ImpMCAR" = colSums(regCOM[[2]][2:nrow(regCOM[[2]]),1:3] - regImpMCAR[[2]][2:nrow(regImpMCAR[[2]]),1:3]), "ImpMAR" = colSums(regCOM[[2]][2:nrow(regCOM[[2]]),1:3] - regImpMAR[[2]][2:nrow(regImpMAR[[2]]),1:3]), "ImpMNAR" = colSums(regCOM[[2]][2:nrow(regCOM[[2]]),1:3] - regImpMNAR[[2]][2:nrow(regImpMNAR[[2]]),1:3]))
+    y <- cbind.data.frame("coefficients"=c("Estimates difference"), "ImpMCAR" = mean(abs(regImpMCAR[[2]][2:nrow(regImpMCAR[[2]]),1] / regCOM[[2]][2:nrow(regCOM[[2]]),1])), "ImpMAR" = mean(abs(regImpMAR[[2]][2:nrow(regImpMAR[[2]]),1] / regCOM[[2]][2:nrow(regCOM[[2]]),1])), "ImpMNAR" = mean(abs(regImpMNAR[[2]][2:nrow(regImpMNAR[[2]]),1] / regCOM[[2]][2:nrow(regCOM[[2]]),1])))
     cbind(x, y)
   }
   vars.rs <- rbind(matrix(rep("COM", 1000), ncol = 1), matrix(rep("MCAR", 1000), ncol = 1), matrix(rep("MAR", 1000), ncol = 1), matrix(rep("MNAR", 1000), ncol = 1), matrix(rep("impMCAR", 1000), ncol = 1), matrix(rep("impMAR", 1000), ncol = 1), matrix(rep("impMNAR", 1000), ncol = 1))
@@ -623,10 +632,12 @@ jomoAnalysis <- function(db, n, inx){
   rsqDiff <- data.frame("diffMAR" = tab1.rs[1:1000,2]-tab1.rs[5001:6000,2], "diffMCAR" = tab1.rs[1:1000,2]-tab1.rs[4001:5000,2], "diffMNAR" = tab1.rs[1:1000,2]-tab1.rs[6001:7000,2])
   rsq <- matrix(c(rbind("COM", "impMAR", "impMCAR", "impNMAR", "MAR", "MCAR", "NMAR"), rsquared, sd.rs, pvalue), nrow = 7, ncol = 4)
   lin.coefficients <- t(cbind.data.frame("Coefficients" = aggregate(all[,19] ~ all[,18], all[18:21], mean)[,1], "ImpMCAR" = aggregate(all[,19] ~ all[,18], all[18:21], mean)[,2], "ImpMAR" = aggregate(all[,20] ~ all[,18], all[18:21], mean)[,2], "ImpMNAR" = aggregate(all[,21] ~ all[,18], all[18:21], mean)[,2])[,2:4])
-  colnames(lin.coefficients) <- c("Estimate difference", "Std Err difference", "t-value difference")
+  lin.coefficients.sd <- t(cbind.data.frame("Coefficients" = aggregate(all[,19] ~ all[,18], all[18:21], sd)[,1], "ImpMCAR" = aggregate(all[,19] ~ all[,18], all[18:21], sd)[,2], "ImpMAR" = aggregate(all[,20] ~ all[,18], all[18:21], sd)[,2], "ImpMNAR" = aggregate(all[,21] ~ all[,18], all[18:21], sd)[,2])[,2:4])
+  colnames(lin.coefficients) <- c("Estimate ratio mean")
+  colnames(lin.coefficients.sd) <- c("Estimate ratio sd")
   rmse.vars <- rbind(matrix(rep("rmseMCAR", 1000), ncol = 1), matrix(rep("rmseMAR", 1000), ncol = 1), matrix(rep("rmseMNAR", 1000), ncol = 1))
   rmseAll <- data.frame("ID" = rmse.vars, "value" = melt(all[!duplicated(all[,c(15,16,17)]), c(15,16,17)])[,2])
-  return(list(rsq, tab1.rs, rsqDiff, rmseAll, lin.coefficients))
+  return(list(rsq, tab1.rs, rsqDiff, rmseAll, lin.coefficients, lin.coefficients.sd))
 }
 
 #Calls logAnalysis on a certain complete table as well as its MCAR, MAR and MNAR versions and the function also performs 
@@ -772,7 +783,7 @@ miceAnalysis <- function(db, n, inx){
     regMCAR <- regAnalysis(mcar)
     regMAR <- regAnalysis(mar)
     regMNAR <- regAnalysis(mnar)
-    ImpMCAR <- complete(mice(mcar, printFlag = F))
+    ImpMCAR <- complete(mice(mcar, method = "norm", printFlag = F))
     regImpMCAR <- regAnalysis(ImpMCAR)
     rmseMCAR <- rmse(d,ImpMCAR)
     if(sum(is.na(mar)) == 0){
@@ -780,7 +791,7 @@ miceAnalysis <- function(db, n, inx){
       rmseMAR <- rmse(d,mar)
     }
     else{
-      ImpMAR <- complete(mice(mar, printFlag = F))
+      ImpMAR <- complete(mice(mar, method = "norm", printFlag = F))
       regImpMAR <- regAnalysis(ImpMAR)
       rmseMAR <- rmse(d,ImpMAR)
     }
@@ -789,12 +800,12 @@ miceAnalysis <- function(db, n, inx){
       rmseMNAR <- rmse(d,mnar)
     }
     else{
-      ImpMNAR <- complete(mice(mnar, printFlag = F))
+      ImpMNAR <- complete(mice(mnar, method = "norm", printFlag = F))
       regImpMNAR <- regAnalysis(ImpMNAR)
       rmseMNAR <- rmse(d,ImpMNAR)
     }
     x <- cbind.data.frame(regCOM[[1]][1,1],regCOM[[1]][1,2], regMCAR[[1]][1,1],regMCAR[[1]][1,2], regMAR[[1]][1,1],regMAR[[1]][1,2], regMNAR[[1]][1,1],regMNAR[[1]][1,2], regImpMCAR[[1]][1,1],regImpMCAR[[1]][1,2], regImpMAR[[1]][1,1],regImpMAR[[1]][1,2], regImpMNAR[[1]][1,1],regImpMNAR[[1]][1,2], rmseMCAR, rmseMAR, rmseMNAR)
-    y <- cbind.data.frame("coefficients"=c("Estimates difference", "Std Err difference", "t-value difference"), "ImpMCAR" = colSums(regCOM[[2]][2:nrow(regCOM[[2]]),1:3] - regImpMCAR[[2]][2:nrow(regImpMCAR[[2]]),1:3]), "ImpMAR" = colSums(regCOM[[2]][2:nrow(regCOM[[2]]),1:3] - regImpMAR[[2]][2:nrow(regImpMAR[[2]]),1:3]), "ImpMNAR" = colSums(regCOM[[2]][2:nrow(regCOM[[2]]),1:3] - regImpMNAR[[2]][2:nrow(regImpMNAR[[2]]),1:3]))
+    y <- cbind.data.frame("coefficients"=c("Estimates"), "ImpMCAR" = mean(abs(regImpMCAR[[2]][2:nrow(regImpMCAR[[2]]),1] / regCOM[[2]][2:nrow(regCOM[[2]]),1])), "ImpMAR" = mean(abs(regImpMAR[[2]][2:nrow(regImpMAR[[2]]),1] / regCOM[[2]][2:nrow(regCOM[[2]]),1])), "ImpMNAR" = mean(abs(regImpMNAR[[2]][2:nrow(regImpMNAR[[2]]),1] / regCOM[[2]][2:nrow(regCOM[[2]]),1])))
     cbind(x,y)
   }
   vars.rs <- rbind(matrix(rep("COM", 1000), ncol = 1), matrix(rep("MCAR", 1000), ncol = 1), matrix(rep("MAR", 1000), ncol = 1), matrix(rep("MNAR", 1000), ncol = 1), matrix(rep("impMCAR", 1000), ncol = 1), matrix(rep("impMAR", 1000), ncol = 1), matrix(rep("impMNAR", 1000), ncol = 1))
@@ -820,10 +831,12 @@ miceAnalysis <- function(db, n, inx){
   rsqDiff <- data.frame("diffMAR" = tab1.rs[1:1000,2]-tab1.rs[5001:6000,2], "diffMCAR" = tab1.rs[1:1000,2]-tab1.rs[4001:5000,2], "diffMNAR" = tab1.rs[1:1000,2]-tab1.rs[6001:7000,2])
   rsq <- matrix(c(rbind("COM", "impMAR", "impMCAR", "impNMAR", "MAR", "MCAR", "NMAR"), rsquared, sd.rs, pvalue), nrow = 7, ncol = 4)
   lin.coefficients <- t(cbind.data.frame("Coefficients" = aggregate(all[,19] ~ all[,18], all[18:21], mean)[,1], "ImpMCAR" = aggregate(all[,19] ~ all[,18], all[18:21], mean)[,2], "ImpMAR" = aggregate(all[,20] ~ all[,18], all[18:21], mean)[,2], "ImpMNAR" = aggregate(all[,21] ~ all[,18], all[18:21], mean)[,2])[,2:4])
-  colnames(lin.coefficients) <- c("Estimate difference", "Std Err difference", "t-value difference")
+  lin.coefficients.sd <- t(cbind.data.frame("Coefficients" = aggregate(all[,19] ~ all[,18], all[18:21], sd)[,1], "ImpMCAR" = aggregate(all[,19] ~ all[,18], all[18:21], sd)[,2], "ImpMAR" = aggregate(all[,20] ~ all[,18], all[18:21], sd)[,2], "ImpMNAR" = aggregate(all[,21] ~ all[,18], all[18:21], sd)[,2])[,2:4])
+  colnames(lin.coefficients) <- c("Estimate ratio mean")
+  colnames(lin.coefficients.sd) <- c("Estimate ratio sd")
   rmse.vars <- rbind(matrix(rep("rmseMCAR", 1000), ncol = 1), matrix(rep("rmseMAR", 1000), ncol = 1), matrix(rep("rmseMNAR", 1000), ncol = 1))
   rmseAll <- data.frame("ID" = rmse.vars, "value" = melt(all[!duplicated(all[,c(15,16,17)]), c(15,16,17)])[,2])
-  return(list(rsq, tab1.rs, rsqDiff, rmseAll, lin.coefficients))
+  return(list(rsq, tab1.rs, rsqDiff, rmseAll, lin.coefficients, lin.coefficients.sd))
 }
 
 #Calls logAnalysis on a certain complete table as well as its MCAR, MAR and MNAR versions and the function also performs 
@@ -848,21 +861,21 @@ miceMixedAnalysis <- function(db, n, inx, dep_var_discr, no_of_discr_vars){
         logImpMAR <- logMAR
         rmseMAR <- rmse(d,mar)
       }
-        else{
-          ImpMAR <- complete(mice(factorize(genMixedData(mar, dep_var_discr, no_of_discr_vars)), method = method, printFlag = F))
-          logImpMAR <- logAnalysis(ImpMAR)
-          for(i in 1:ncol(d)){ImpMAR[,i]=as.numeric(ImpMAR[,i])}
-          rmseMAR <- rmse(d,ImpMAR)
-        }}
+      else{
+        ImpMAR <- complete(mice(factorize(genMixedData(mar, dep_var_discr, no_of_discr_vars)), method = method, printFlag = F))
+        logImpMAR <- logAnalysis(ImpMAR)
+        for(i in 1:ncol(d)){ImpMAR[,i]=as.numeric(ImpMAR[,i])}
+        rmseMAR <- rmse(d,ImpMAR)
+      }}
       {if(sum(is.na(mnar)) == 0){
         logImpMNAR <- logMNAR
         rmseMNAR <- rmse(d,mnar)
       }
-        else{
-          ImpMNAR <- complete(mice(factorize(genMixedData(mnar, dep_var_discr, no_of_discr_vars)), method = method, printFlag = F))
-          logImpMNAR <- logAnalysis(ImpMNAR)
-          for(i in 1:ncol(d)){ImpMNAR[,i]=as.numeric(ImpMNAR[,i])}
-          rmseMNAR <- rmse(d,ImpMNAR)
+      else{
+        ImpMNAR <- complete(mice(factorize(genMixedData(mnar, dep_var_discr, no_of_discr_vars)), method = method, printFlag = F))
+        logImpMNAR <- logAnalysis(ImpMNAR)
+        for(i in 1:ncol(d)){ImpMNAR[,i]=as.numeric(ImpMNAR[,i])}
+        rmseMNAR <- rmse(d,ImpMNAR)
         }}
       x <- cbind.data.frame(logCOM[[1]][1,1],logCOM[[1]][1,2], logCOM[[1]][1,3],logCOM[[1]][1,4], logMCAR[[1]][1,1],logMCAR[[1]][1,2], logMCAR[[1]][1,3],logMCAR[[1]][1,4], logMAR[[1]][1,1],logMAR[[1]][1,2], logMAR[[1]][1,3],logMAR[[1]][1,4], logMNAR[[1]][1,1],logMNAR[[1]][1,2], logMNAR[[1]][1,3],logMNAR[[1]][1,4], logImpMCAR[[1]][1,1],logImpMCAR[[1]][1,2], logImpMCAR[[1]][1,3],logImpMCAR[[1]][1,4], logImpMAR[[1]][1,1],logImpMAR[[1]][1,2],logImpMAR[[1]][1,3],logImpMAR[[1]][1,4],logImpMNAR[[1]][1,1],logImpMNAR[[1]][1,2],logImpMNAR[[1]][1,3],logImpMNAR[[1]][1,4], rmseMCAR, rmseMAR, rmseMNAR)
       y <- cbind.data.frame("coefficients"="Estimates difference", "ImpMCAR" = mean(abs(logImpMCAR[[2]][2:nrow(logImpMCAR[[2]]),1] / logCOM[[2]][2:nrow(logCOM[[2]]),1])), "ImpMAR" = mean(abs(logImpMAR[[2]][2:nrow(logImpMAR[[2]]),1] / logCOM[[2]][2:nrow(logCOM[[2]]),1])), "ImpMNAR" = mean(abs(logImpMNAR[[2]][2:nrow(logImpMNAR[[2]]),1] / logCOM[[2]][2:nrow(logCOM[[2]]),1])))
@@ -922,7 +935,7 @@ miceMixedAnalysis <- function(db, n, inx, dep_var_discr, no_of_discr_vars){
         regImpMAR <- regAnalysis(ImpMAR)
         for(i in 1:ncol(d)){ImpMAR[,i]=as.numeric(ImpMAR[,i])}
         rmseMAR <- rmse(d,ImpMAR)
-      }
+        }
       if(sum(is.na(mnar)) == 0){
         regImpMNAR <- regMNAR
         rmseMNAR <- rmse(d,mnar)
@@ -932,7 +945,7 @@ miceMixedAnalysis <- function(db, n, inx, dep_var_discr, no_of_discr_vars){
         regImpMNAR <- regAnalysis(ImpMNAR)
         for(i in 1:ncol(d)){ImpMNAR[,i]=as.numeric(ImpMNAR[,i])}
         rmseMNAR <- rmse(d,ImpMNAR)
-      }
+        }
       x <- cbind.data.frame(regCOM[[1]][1,1],regCOM[[1]][1,2], regMCAR[[1]][1,1],regMCAR[[1]][1,2], regMAR[[1]][1,1],regMAR[[1]][1,2], regMNAR[[1]][1,1],regMNAR[[1]][1,2], regImpMCAR[[1]][1,1],regImpMCAR[[1]][1,2], regImpMAR[[1]][1,1],regImpMAR[[1]][1,2], regImpMNAR[[1]][1,1],regImpMNAR[[1]][1,2], rmseMCAR, rmseMAR, rmseMNAR)
       y <- cbind.data.frame("coefficients"=c("Estimates"), "ImpMCAR" = mean(abs(regImpMCAR[[2]][2:nrow(regImpMCAR[[2]]),1] / regCOM[[2]][2:nrow(regCOM[[2]]),1])), "ImpMAR" = mean(abs(regImpMAR[[2]][2:nrow(regImpMAR[[2]]),1] / regCOM[[2]][2:nrow(regCOM[[2]]),1])), "ImpMNAR" = mean(abs(regImpMNAR[[2]][2:nrow(regImpMNAR[[2]]),1] / regCOM[[2]][2:nrow(regCOM[[2]]),1])))
       cbind(x, y)
@@ -989,7 +1002,7 @@ rfAnalysis <- function(db, n, inx){
     rmseMAR <- rmse(d,ImpMAR)
     rmseMNAR <- rmse(d,ImpMNAR)
     x <- cbind.data.frame(regCOM[[1]][1,1],regCOM[[1]][1,2], regMCAR[[1]][1,1],regMCAR[[1]][1,2], regMAR[[1]][1,1],regMAR[[1]][1,2], regMNAR[[1]][1,1],regMNAR[[1]][1,2], regImpMCAR[[1]][1,1],regImpMCAR[[1]][1,2], regImpMAR[[1]][1,1],regImpMAR[[1]][1,2], regImpMNAR[[1]][1,1],regImpMNAR[[1]][1,2], rmseMCAR, rmseMAR, rmseMNAR)
-    y <- cbind.data.frame("coefficients"=c("Estimates difference", "Std Err difference", "t-value difference"), "ImpMCAR" = colSums(regCOM[[2]][2:nrow(regCOM[[2]]),1:3] - regImpMCAR[[2]][2:nrow(regImpMCAR[[2]]),1:3]), "ImpMAR" = colSums(regCOM[[2]][2:nrow(regCOM[[2]]),1:3] - regImpMAR[[2]][2:nrow(regImpMAR[[2]]),1:3]), "ImpMNAR" = colSums(regCOM[[2]][2:nrow(regCOM[[2]]),1:3] - regImpMNAR[[2]][2:nrow(regImpMNAR[[2]]),1:3]))
+    y <- cbind.data.frame("coefficients"=c("Estimates difference"), "ImpMCAR" = mean(abs(regImpMCAR[[2]][2:nrow(regImpMCAR[[2]]),1] / regCOM[[2]][2:nrow(regCOM[[2]]),1])), "ImpMAR" = mean(abs(regImpMAR[[2]][2:nrow(regImpMAR[[2]]),1] / regCOM[[2]][2:nrow(regCOM[[2]]),1])), "ImpMNAR" = mean(abs(regImpMNAR[[2]][2:nrow(regImpMNAR[[2]]),1] / regCOM[[2]][2:nrow(regCOM[[2]]),1])))
     cbind(x, y)
   }
   vars.rs <- rbind(matrix(rep("COM", 1000), ncol = 1), matrix(rep("MCAR", 1000), ncol = 1), matrix(rep("MAR", 1000), ncol = 1), matrix(rep("MNAR", 1000), ncol = 1), matrix(rep("impMCAR", 1000), ncol = 1), matrix(rep("impMAR", 1000), ncol = 1), matrix(rep("impMNAR", 1000), ncol = 1))
@@ -1015,10 +1028,12 @@ rfAnalysis <- function(db, n, inx){
   rsqDiff <- data.frame("diffMAR" = tab1.rs[1:1000,2]-tab1.rs[5001:6000,2], "diffMCAR" = tab1.rs[1:1000,2]-tab1.rs[4001:5000,2], "diffMNAR" = tab1.rs[1:1000,2]-tab1.rs[6001:7000,2])
   rsq <- matrix(c(rbind("COM", "impMAR", "impMCAR", "impNMAR", "MAR", "MCAR", "NMAR"), rsquared, sd.rs, pvalue), nrow = 7, ncol = 4)
   lin.coefficients <- t(cbind.data.frame("Coefficients" = aggregate(all[,19] ~ all[,18], all[18:21], mean)[,1], "ImpMCAR" = aggregate(all[,19] ~ all[,18], all[18:21], mean)[,2], "ImpMAR" = aggregate(all[,20] ~ all[,18], all[18:21], mean)[,2], "ImpMNAR" = aggregate(all[,21] ~ all[,18], all[18:21], mean)[,2])[,2:4])
-  colnames(lin.coefficients) <- c("Estimate difference", "Std Err difference", "t-value difference")
+  lin.coefficients.sd <- t(cbind.data.frame("Coefficients" = aggregate(all[,19] ~ all[,18], all[18:21], sd)[,1], "ImpMCAR" = aggregate(all[,19] ~ all[,18], all[18:21], sd)[,2], "ImpMAR" = aggregate(all[,20] ~ all[,18], all[18:21], sd)[,2], "ImpMNAR" = aggregate(all[,21] ~ all[,18], all[18:21], sd)[,2])[,2:4])
+  colnames(lin.coefficients) <- c("Estimate ratio mean")
+  colnames(lin.coefficients.sd) <- c("Estimate ratio sd")
   rmse.vars <- rbind(matrix(rep("rmseMCAR", 1000), ncol = 1), matrix(rep("rmseMAR", 1000), ncol = 1), matrix(rep("rmseMNAR", 1000), ncol = 1))
   rmseAll <- data.frame("ID" = rmse.vars, "value" = melt(all[!duplicated(all[,c(15,16,17)]), c(15,16,17)])[,2])
-  return(list(rsq, tab1.rs, rsqDiff, rmseAll, lin.coefficients))
+  return(list(rsq, tab1.rs, rsqDiff, rmseAll, lin.coefficients, lin.coefficients.sd))
 }
 
 #Calls logAnalysis on a certain complete table as well as its MCAR, MAR and MNAR versions and the function also performs 
