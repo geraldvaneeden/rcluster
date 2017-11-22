@@ -23,4 +23,77 @@ spec:
       nodeSelector:
         node_type: n13
 
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: n11-deployment
+  labels:
+    app: n11
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: n11
+  template:
+    metadata:
+      labels:
+        app: n11
+    spec:
+      containers:
+      - name: n11
+        image: gveeden/rcluster:latest
+        command: ["/usr/sbin/sshd", "-D"]
+        ports:
+        - containerPort: 22
+      nodeSelector:
+        node_type: n11
+        
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: n10-deployment
+  labels:
+    app: n10
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: n10
+  template:
+    metadata:
+      labels:
+        app: n10
+    spec:
+      containers:
+      - name: n10
+        image: gveeden/rcluster:latest
+        command: ["/usr/sbin/sshd", "-D"]
+        ports:
+        - containerPort: 22
+      nodeSelector:
+        node_type: n10
 
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: n9-deployment
+  labels:
+    app: n9
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: n9
+  template:
+    metadata:
+      labels:
+        app: n9
+    spec:
+      containers:
+      - name: n9
+        image: gveeden/rcluster:latest
+        command: ["/usr/sbin/sshd", "-D"]
+        ports:
+        - containerPort: 22
+      nodeSelector:
+        node_type: n9
