@@ -2,7 +2,7 @@ FROM rocker/r-base
 WORKDIR /usr/local/src/rscripts
 
 # Setup SSH
-RUN apt-get update && apt-get install -y openssh-server && apt-get install nmap
+RUN apt-get update && apt-get install -y openssh-server
 RUN mkdir /var/run/sshd
 COPY ssh/id_rsa /root/.ssh/id_rsa
 COPY ssh/id_rsa.pub /root/.ssh/id_rsa.pub
