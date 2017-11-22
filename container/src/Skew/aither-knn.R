@@ -36,6 +36,8 @@ time <- c()
 rmseTable <- c()
 coefficientsDiff <- c()
 
+registerDoSNOW(clus)
+
 #sC5
 name = "sC5"
 start.time <- Sys.time()

@@ -19,8 +19,8 @@ depvar <- noquote(names(Sigma[colnum]))
 
 source('functionsNorm.R')
 
-clus <- makeCluster("10.2.0.23", "10.2.3.2", "10.2.4.2", "10.2.5.2", "10.2.7.2", "10.2.1.2", "10.2.2.3", "10.2.8.2", "10.2.6.2", "10.2.9.3", master='10.2.9.3', type="SOCK")
-clusterExport(clus, c("st", "MCAR", "MAR", "MNAR", "regAnalysis", "complete", "calcP", "mice", "mice.impute.pmm", "mice.impute.norm", "logAnalysis", "resultsDiff", "rmse", "registerDoMC", "graphme", "resultsTable", "checkMethod"))
+clus <- makeCluster(c("10.2.0.24", "10.2.3.3", "10.2.4.3", "10.2.5.3", "10.2.7.3", "10.2.1.3", "10.2.2.4", "10.2.8.3", "10.2.6.3", "10.2.9.4"), master='10.2.0.24', type="SOCK")
+clusterExport(clus, c("st", "MCAR", "MAR", "MNAR", "regAnalysis", "complete", "calcP", "neighbour", "kNN", "knnAnalysis", "knnMixedAnalysis", "mice", "mice.impute.pmm", "mice.impute.norm", "logAnalysis", "resultsDiff", "rmse", "registerDoMC", "graphme", "resultsTable", "checkMethod"))
 
 #CONTINUOUS DATA
 #BIG_TABLE
@@ -36,10 +36,15 @@ rmseTable <- c()
 time <- c()
 coefficientsDiff <- c()
 
+registerDoSNOW(clus)
+
+#Set parallel iteration scheme
+tbl <- matrix(1:n, 125, 8)
+
 #sC5
 name = "sC5"
 start.time <- Sys.time()
-results <- knnAnalysis(bt, 125, indexesList$mc5_small, 3)
+results <- knnAnalysis(bt, tbl, indexesList$mc5_small, 3)
 end.time <- Sys.time()
 time.taken <- cbind(name, end.time-start.time, start.time, end.time)
 table <- resultsTable(data.frame(results[[1]]), c(name))
@@ -57,7 +62,7 @@ coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
 #sC0
 name = "sC0"
 start.time <- Sys.time()
-results <- knnAnalysis(bt, 125, indexesList$mc10_small, 3)
+results <- knnAnalysis(bt, tbl, indexesList$mc10_small, 3)
 end.time <- Sys.time()
 time.taken <- cbind(name, end.time-start.time, start.time, end.time)
 table <- resultsTable(data.frame(results[[1]]), c(name))
@@ -75,7 +80,7 @@ coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
 #lC5
 name = "lC5"
 start.time <- Sys.time()
-results <- knnAnalysis(bt, 125, indexesList$mc5_medium, 3)
+results <- knnAnalysis(bt, tbl, indexesList$mc5_medium, 3)
 end.time <- Sys.time()
 time.taken <- cbind(name, end.time-start.time, start.time, end.time)
 table <- resultsTable(data.frame(results[[1]]), c(name))
@@ -93,7 +98,7 @@ coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
 #lC0
 name = "lC0"
 start.time <- Sys.time()
-results <- knnAnalysis(bt, 125, indexesList$mc10_medium, 3)
+results <- knnAnalysis(bt, tbl, indexesList$mc10_medium, 3)
 end.time <- Sys.time()
 time.taken <- cbind(name, end.time-start.time, start.time, end.time)
 table <- resultsTable(data.frame(results[[1]]), c(name))
@@ -111,7 +116,7 @@ coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
 #vC5
 name = "vC5"
 start.time <- Sys.time()
-results <- knnAnalysis(bt, 125, indexesList$mc5_large, 3)
+results <- knnAnalysis(bt, tbl, indexesList$mc5_large, 3)
 end.time <- Sys.time()
 time.taken <- cbind(name, end.time-start.time, start.time, end.time)
 table <- resultsTable(data.frame(results[[1]]), c(name))
@@ -129,7 +134,7 @@ coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
 #vC0
 name = "vC0"
 start.time <- Sys.time()
-results <- knnAnalysis(bt, 125, indexesList$mc10_large, 3)
+results <- knnAnalysis(bt, tbl, indexesList$mc10_large, 3)
 end.time <- Sys.time()
 time.taken <- cbind(name, end.time-start.time, start.time, end.time)
 table <- resultsTable(data.frame(results[[1]]), c(name))
@@ -147,7 +152,7 @@ coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
 #lM5c1
 name = "lM5c1"
 start.time <- Sys.time()
-results <- knnMixedAnalysis(bt, 125, indexesList$mc5_medium, F, 1, 3)
+results <- knnMixedAnalysis(bt, tbl, indexesList$mc5_medium, F, 1, 3)
 end.time <- Sys.time()
 time.taken <- cbind(name, end.time-start.time, start.time, end.time)
 table <- resultsTable(data.frame(results[[1]]), c(name))
@@ -165,7 +170,7 @@ coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
 #lM5c2
 name = "lM5c2"
 start.time <- Sys.time()
-results <- knnMixedAnalysis(bt, 125, indexesList$mc5_medium, F, 2, 3)
+results <- knnMixedAnalysis(bt, tbl, indexesList$mc5_medium, F, 2, 3)
 end.time <- Sys.time()
 time.taken <- cbind(name, end.time-start.time, start.time, end.time)
 table <- resultsTable(data.frame(results[[1]]), c(name))
@@ -183,7 +188,7 @@ coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
 #lM5c3
 name = "lM5c3"
 start.time <- Sys.time()
-results <- knnMixedAnalysis(bt, 125, indexesList$mc5_medium, F, 3, 3)
+results <- knnMixedAnalysis(bt, tbl, indexesList$mc5_medium, F, 3, 3)
 end.time <- Sys.time()
 time.taken <- cbind(name, end.time-start.time, start.time, end.time)
 table <- resultsTable(data.frame(results[[1]]), c(name))
@@ -201,7 +206,7 @@ coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
 #lM0c1
 name = "lM0c1"
 start.time <- Sys.time()
-results <- knnMixedAnalysis(bt, 125, indexesList$mc10_medium, F, 1, 3)
+results <- knnMixedAnalysis(bt, tbl, indexesList$mc10_medium, F, 1, 3)
 end.time <- Sys.time()
 time.taken <- cbind(name, end.time-start.time, start.time, end.time)
 table <- resultsTable(data.frame(results[[1]]), c(name))
@@ -219,7 +224,7 @@ coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
 #lM0c4
 name = "lM0c4"
 start.time <- Sys.time()
-results <- knnMixedAnalysis(bt, 125, indexesList$mc10_medium, F, 4, 3)
+results <- knnMixedAnalysis(bt, tbl, indexesList$mc10_medium, F, 4, 3)
 end.time <- Sys.time()
 time.taken <- cbind(name, end.time-start.time, start.time, end.time)
 table <- resultsTable(data.frame(results[[1]]), c(name))
@@ -237,7 +242,7 @@ coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
 #lM0c7
 name = "lM0c7"
 start.time <- Sys.time()
-results <- knnMixedAnalysis(bt, 125, indexesList$mc10_medium, F, 7, 3)
+results <- knnMixedAnalysis(bt, tbl, indexesList$mc10_medium, F, 7, 3)
 end.time <- Sys.time()
 time.taken <- cbind(name, end.time-start.time, start.time, end.time)
 table <- resultsTable(data.frame(results[[1]]), c(name))
@@ -261,7 +266,7 @@ residDiffTable <- c()
 #lM5d0
 name = "lM5d0"
 start.time <- Sys.time()
-results <- knnMixedAnalysis(bt, 125, indexesList$mc5_medium, T, 0, 3)
+results <- knnMixedAnalysis(bt, tbl, indexesList$mc5_medium, T, 0, 3)
 end.time <- Sys.time()
 time.taken <- cbind(name, end.time-start.time, start.time, end.time)
 table <- resultsTableMixed(data.frame(results[[1]]), c(name))
@@ -279,7 +284,7 @@ coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
 #lM5d2
 name = "lM5d2"
 start.time <- Sys.time()
-results <- knnMixedAnalysis(bt, 125, indexesList$mc5_medium, T, 2, 3)
+results <- knnMixedAnalysis(bt, tbl, indexesList$mc5_medium, T, 2, 3)
 end.time <- Sys.time()
 time.taken <- cbind(name, end.time-start.time, start.time, end.time)
 table <- resultsTableMixed(data.frame(results[[1]]), c(name))
@@ -297,7 +302,7 @@ coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
 #lM5d3
 name = "lM5d3"
 start.time <- Sys.time()
-results <- knnMixedAnalysis(bt, 125, indexesList$mc5_medium, T, 3, 3)
+results <- knnMixedAnalysis(bt, tbl, indexesList$mc5_medium, T, 3, 3)
 end.time <- Sys.time()
 time.taken <- cbind(name, end.time-start.time, start.time, end.time)
 table <- resultsTableMixed(data.frame(results[[1]]), c(name))
@@ -315,7 +320,7 @@ coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
 #lM0d0
 name = "lM0d0"
 start.time <- Sys.time()
-results <- knnMixedAnalysis(bt, 125, indexesList$mc10_medium, T, 0, 3)
+results <- knnMixedAnalysis(bt, tbl, indexesList$mc10_medium, T, 0, 3)
 end.time <- Sys.time()
 time.taken <- cbind(name, end.time-start.time, start.time, end.time)
 table <- resultsTableMixed(data.frame(results[[1]]), c(name))
@@ -333,7 +338,7 @@ coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
 #lM0d4
 name = "lM0d4"
 start.time <- Sys.time()
-results <- knnMixedAnalysis(bt, 125, indexesList$mc10_medium, T, 4, 3)
+results <- knnMixedAnalysis(bt, tbl, indexesList$mc10_medium, T, 4, 3)
 end.time <- Sys.time()
 time.taken <- cbind(name, end.time-start.time, start.time, end.time)
 table <- resultsTableMixed(data.frame(results[[1]]), c(name))
@@ -351,7 +356,7 @@ coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
 #lM0d7
 name = "lM0d7"
 start.time <- Sys.time()
-results <- knnMixedAnalysis(bt, 125, indexesList$mc10_medium, T, 7, 3)
+results <- knnMixedAnalysis(bt, tbl, indexesList$mc10_medium, T, 7, 3)
 end.time <- Sys.time()
 time.taken <- cbind(name, end.time-start.time, start.time, end.time)
 table <- resultsTableMixed(data.frame(results[[1]]), c(name))
