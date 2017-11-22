@@ -19,7 +19,7 @@ depvar <- noquote(names(Sigma[colnum]))
 
 source('functionsNorm.R')
 
-clus <- makeCluster("10.2.0.99", "10.2.0.100", "10.2.0.101", "10.2.0.102", "10.2.0.103", "10.2.0.104", "10.2.0.105", "10.2.0.106", master='10.2.2.122', type="SOCK")
+clus <- makeCluster("10.2.0.23", "10.2.3.2", "10.2.4.2", "10.2.5.2", "10.2.7.2", "10.2.1.2", "10.2.2.3", "10.2.8.2", "10.2.6.2", "10.2.9.3", master='10.2.9.3', type="SOCK")
 clusterExport(clus, c("st", "MCAR", "MAR", "MNAR", "regAnalysis", "complete", "calcP", "mice", "mice.impute.pmm", "mice.impute.norm", "logAnalysis", "resultsDiff", "rmse", "registerDoMC", "graphme", "resultsTable", "checkMethod"))
 
 #CONTINUOUS DATA
