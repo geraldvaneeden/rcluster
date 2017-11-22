@@ -19,8 +19,8 @@ depvar <- noquote(names(Sigma[colnum]))
 
 source('functionsNorm.R')
 
-clus <- makeCluster(c("10.2.0.24", "10.2.3.3", "10.2.4.3", "10.2.5.3", "10.2.7.3", "10.2.1.3", "10.2.2.4", "10.2.8.3", "10.2.6.3", "10.2.9.4"), master='10.2.0.24', type="SOCK")
-clusterExport(clus, c("st", "MCAR", "MAR", "MNAR", "regAnalysis", "complete", "calcP", "neighbour", "kNN", "knnAnalysis", "knnMixedAnalysis", "mice", "mice.impute.pmm", "mice.impute.norm", "logAnalysis", "resultsDiff", "rmse", "registerDoMC", "graphme", "resultsTable", "checkMethod"))
+clus <- makeCluster(c("10.2.0.25", "10.2.3.5", "10.2.4.5", "10.2.5.5", "10.2.7.5", "10.2.1.5", "10.2.2.7", "10.2.8.6", "10.2.6.5", "10.2.9.5"), master='10.2.0.25', type="SOCK")
+clusterExport(clus, c("st", "MCAR", "MAR", "MNAR", "regAnalysis", "complete", "calcP", "neighbour", "kNN", "knnAnalysis", "knnMixedAnalysis", "mice", "mice.impute.pmm", "mice.impute.norm", "logAnalysis", "resultsDiff", "rmse", "registerDoMC", "graphme", "resultsTable", "checkMethod", "genMixedData"))
 
 #CONTINUOUS DATA
 #BIG_TABLE
@@ -39,6 +39,7 @@ coefficientsDiff <- c()
 registerDoSNOW(clus)
 
 #Set parallel iteration scheme
+n = 1000
 tbl <- matrix(1:n, 125, 8)
 
 #sC5
