@@ -19,8 +19,8 @@ depvar <- noquote(names(Sigma[colnum]))
 
 source('functionsNorm.R')
 
-clus <- makeCluster(c("10.2.0.25", "10.2.3.5", "10.2.4.5", "10.2.5.5", "10.2.7.5", "10.2.1.5", "10.2.2.7", "10.2.8.6", "10.2.6.5", "10.2.9.5"), master='10.2.0.25', type="SOCK")
-clusterExport(clus, c("st", "MCAR", "MAR", "MNAR", "regAnalysis", "complete", "calcP", "neighbour", "kNN", "knnAnalysis", "knnMixedAnalysis", "mice", "mice.impute.pmm", "mice.impute.norm", "logAnalysis", "resultsDiff", "rmse", "registerDoMC", "graphme", "resultsTable", "checkMethod", "genMixedData"))
+clus <- makeCluster(c("10.2.0.26", "10.2.3.6", "10.2.4.6", "10.2.5.6", "10.2.7.6", "10.2.1.6", "10.2.2.8", "10.2.8.7", "10.2.6.6", "10.2.9.6"), master='10.2.0.26', type="SOCK")
+clusterExport(clus, c("st", "MCAR", "MAR", "MNAR", "regAnalysis", "complete", "calcP", "neighbour", "kNN", "knnAnalysis", "knnMixedAnalysis", "mice", "mice.impute.pmm", "mice.impute.norm", "logAnalysis", "resultsDiff", "rmse", "registerDoMC", "graphme", "resultsTable", "checkMethod", "genMixedData", "createFrames", "writeTables"))
 
 #CONTINUOUS DATA
 #BIG_TABLE
@@ -41,340 +41,75 @@ registerDoSNOW(clus)
 #Set parallel iteration scheme
 n = 1000
 tbl <- matrix(1:n, 125, 8)
+k <- 3
+myNames <- c("sC5", "sC0", "lC5", "lC0", "vC5", "vC0")
+myIndexes <- c(indexesList$mc5_small, indexesList$mc10_small, indexesList$mc5_medium, indexesList$mc10_medium, indexesList$mc5_large, indexesList$mc10_large)
 
-#sC5
-name = "sC5"
-start.time <- Sys.time()
-results <- knnAnalysis(bt, tbl, indexesList$mc5_small, 3)
-end.time <- Sys.time()
-time.taken <- cbind(name, end.time-start.time, start.time, end.time)
-table <- resultsTable(data.frame(results[[1]]), c(name))
-graphme(setorder(results[[2]], ID), name, "knn", "r-squared value", "Based on 1000 samples. 100 obs, 5 highly corr vars. All vars are continuous.")
-rmseResults <- aggregate(results[[4]][,2] ~ as.character(results[[4]][,1]), results[4], mean)
-for(i in 1:3){rmseResults[i,1] <- paste(name, rmseResults[i,1])}
-rmseResults <- data.frame("DB"=rmseResults[,1], "rmse"=rmseResults[,2])
-rmseTable <- rbind(rmseTable, rmseResults)
-rsqDiffTable <- resultsDiff(results[[3]], name, "knn")
-time <- rbind(time, time.taken)
-rownames(results[[5]]) <- c(paste(name, rownames(results[[5]])[1]), paste(name, rownames(results[[5]])[2]), paste(name, rownames(results[[5]])[3]))
-coefficientsTemp <- cbind.data.frame(results[[5]], "SD" = results[[6]][1:3])
-coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
+for(i in 1:6){
+  name = myNames[i]
+  start.time <- Sys.time()
+  results <- knnAnalysis(bt, tbl, myIndexes[i], k)
+  end.time <- Sys.time()
+  time.taken <- cbind(name, end.time-start.time, start.time, end.time)
+  time <- rbind(time, time.taken)
+  writeTables(name, results)
+  write.csv(as.data.frame(results[[1]]), paste(name, "rmseTable.csv", sep = "_"))
+}
 
-#sC0
-name = "sC0"
-start.time <- Sys.time()
-results <- knnAnalysis(bt, tbl, indexesList$mc10_small, 3)
-end.time <- Sys.time()
-time.taken <- cbind(name, end.time-start.time, start.time, end.time)
-table <- resultsTable(data.frame(results[[1]]), c(name))
-graphme(setorder(results[[2]], ID), name, "knn", "r-squared value", "Based on 1000 samples. 100 obs, 10 highly corr vars. All vars are continuous.")
-rmseResults <- aggregate(results[[4]][,2] ~ as.character(results[[4]][,1]), results[4], mean)
-for(i in 1:3){rmseResults[i,1] <- paste(name, rmseResults[i,1])}
-rmseResults <- data.frame("DB"=rmseResults[,1], "rmse"=rmseResults[,2])
-rmseTable <- rbind(rmseTable, rmseResults)
-rsqDiffTable <- cbind(rsqDiffTable, resultsDiff(results[[3]], name, NA))
-time <- rbind(time, time.taken)
-rownames(results[[5]]) <- c(paste(name, rownames(results[[5]])[1]), paste(name, rownames(results[[5]])[2]), paste(name, rownames(results[[5]])[3]))
-coefficientsTemp <- cbind.data.frame(results[[5]], "SD" = results[[6]][1:3])
-coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
+myNames <- c("lM5c1", "lM5c2", "lM5c3")
+binVars <- c(1, 2, 3)
 
-#lC5
-name = "lC5"
-start.time <- Sys.time()
-results <- knnAnalysis(bt, tbl, indexesList$mc5_medium, 3)
-end.time <- Sys.time()
-time.taken <- cbind(name, end.time-start.time, start.time, end.time)
-table <- resultsTable(data.frame(results[[1]]), c(name))
-graphme(setorder(results[[2]], ID), name, "knn", "r-squared value", "Based on 1000 samples. 1 000 obs, 5 highly corr vars. All variables are continuous.")
-rmseResults <- aggregate(results[[4]][,2] ~ as.character(results[[4]][,1]), results[4], mean)
-for(i in 1:3){rmseResults[i,1] <- paste(name, rmseResults[i,1])}
-rmseResults <- data.frame("DB"=rmseResults[,1], "rmse"=rmseResults[,2])
-rmseTable <- rbind(rmseTable, rmseResults)
-rsqDiffTable <- cbind(rsqDiffTable, resultsDiff(results[[3]], name, NA))
-time <- rbind(time, time.taken)
-rownames(results[[5]]) <- c(paste(name, rownames(results[[5]])[1]), paste(name, rownames(results[[5]])[2]), paste(name, rownames(results[[5]])[3]))
-coefficientsTemp <- cbind.data.frame(results[[5]], "SD" = results[[6]][1:3])
-coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
+for(i in 1:3){
+  name = myNames[i]
+  start.time <- Sys.time()
+  results <- knnMixedAnalysis(bt, tbl, indexesList$mc5_medium, F, binVars[i], k)
+  end.time <- Sys.time()
+  time.taken <- cbind(name, end.time-start.time, start.time, end.time)
+  time <- rbind(time, time.taken)
+  writeTables(name, results)
+  write.csv(as.data.frame(results[[1]]), paste(name, "rmseTable.csv", sep = "_"))
+}
 
-#lC0
-name = "lC0"
-start.time <- Sys.time()
-results <- knnAnalysis(bt, tbl, indexesList$mc10_medium, 3)
-end.time <- Sys.time()
-time.taken <- cbind(name, end.time-start.time, start.time, end.time)
-table <- resultsTable(data.frame(results[[1]]), c(name))
-graphme(setorder(results[[2]], ID), name, "knn", "r-squared value", "Based on 1000 samples. 1 000 obs, 10 highly corr vars. All variables are continuous.")
-rmseResults <- aggregate(results[[4]][,2] ~ as.character(results[[4]][,1]), results[4], mean)
-for(i in 1:3){rmseResults[i,1] <- paste(name, rmseResults[i,1])}
-rmseResults <- data.frame("DB"=rmseResults[,1], "rmse"=rmseResults[,2])
-rmseTable <- rbind(rmseTable, rmseResults)
-rsqDiffTable <- cbind(rsqDiffTable, resultsDiff(results[[3]], name, NA))
-time <- rbind(time, time.taken)
-rownames(results[[5]]) <- c(paste(name, rownames(results[[5]])[1]), paste(name, rownames(results[[5]])[2]), paste(name, rownames(results[[5]])[3]))
-coefficientsTemp <- cbind.data.frame(results[[5]], "SD" = results[[6]][1:3])
-coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
+myNames <- c("lM0c1", "lM0c4", "lM0c7")
+binVars <- c(1, 4, 7)
 
-#vC5
-name = "vC5"
-start.time <- Sys.time()
-results <- knnAnalysis(bt, tbl, indexesList$mc5_large, 3)
-end.time <- Sys.time()
-time.taken <- cbind(name, end.time-start.time, start.time, end.time)
-table <- resultsTable(data.frame(results[[1]]), c(name))
-graphme(setorder(results[[2]], ID), name, "knn", "r-squared value", "Based on 1000 samples. 10 000 obs, 5 highly corr vars. All variables are continuous.")
-rmseResults <- aggregate(results[[4]][,2] ~ as.character(results[[4]][,1]), results[4], mean)
-for(i in 1:3){rmseResults[i,1] <- paste(name, rmseResults[i,1])}
-rmseResults <- data.frame("DB"=rmseResults[,1], "rmse"=rmseResults[,2])
-rmseTable <- rbind(rmseTable, rmseResults)
-rsqDiffTable <- cbind(rsqDiffTable, resultsDiff(results[[3]], name, NA))
-time <- rbind(time, time.taken)
-rownames(results[[5]]) <- c(paste(name, rownames(results[[5]])[1]), paste(name, rownames(results[[5]])[2]), paste(name, rownames(results[[5]])[3]))
-coefficientsTemp <- cbind.data.frame(results[[5]], "SD" = results[[6]][1:3])
-coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
+for(i in 1:3){
+  name = myNames[i]
+  start.time <- Sys.time()
+  results <- knnMixedAnalysis(bt, tbl, indexesList$mc10_medium, F, binVars[i], k)
+  end.time <- Sys.time()
+  time.taken <- cbind(name, end.time-start.time, start.time, end.time)
+  time <- rbind(time, time.taken)
+  writeTables(name, results)
+  write.csv(as.data.frame(results[[1]]), paste(name, "rmseTable.csv", sep = "_"))
+}
 
-#vC0
-name = "vC0"
-start.time <- Sys.time()
-results <- knnAnalysis(bt, tbl, indexesList$mc10_large, 3)
-end.time <- Sys.time()
-time.taken <- cbind(name, end.time-start.time, start.time, end.time)
-table <- resultsTable(data.frame(results[[1]]), c(name))
-graphme(setorder(results[[2]], ID), name, "knn", "r-squared value", "Based on 1000 samples. 10 000 obs, 10 highly corr vars. All variables are continuous.")
-rmseResults <- aggregate(results[[4]][,2] ~ as.character(results[[4]][,1]), results[4], mean)
-for(i in 1:3){rmseResults[i,1] <- paste(name, rmseResults[i,1])}
-rmseResults <- data.frame("DB"=rmseResults[,1], "rmse"=rmseResults[,2])
-rmseTable <- rbind(rmseTable, rmseResults)
-rsqDiffTable <- cbind(rsqDiffTable, resultsDiff(results[[3]], name, NA))
-time <- rbind(time, time.taken)
-rownames(results[[5]]) <- c(paste(name, rownames(results[[5]])[1]), paste(name, rownames(results[[5]])[2]), paste(name, rownames(results[[5]])[3]))
-coefficientsTemp <- cbind.data.frame(results[[5]], "SD" = results[[6]][1:3])
-coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
+myNames <- c("lM5d0", "lM5d2", "lM5d3")
+binVars <- c(1, 2, 3)
 
-#lM5c1
-name = "lM5c1"
-start.time <- Sys.time()
-results <- knnMixedAnalysis(bt, tbl, indexesList$mc5_medium, F, 1, 3)
-end.time <- Sys.time()
-time.taken <- cbind(name, end.time-start.time, start.time, end.time)
-table <- resultsTable(data.frame(results[[1]]), c(name))
-graphme(setorder(results[[2]], ID), name, "knn", "r-squared value", "Based on 1000 samples. 1000 obs, 5 highly corr vars. Dependent var = continuous. 1 Binary variable.")
-rmseResults <- aggregate(results[[4]][,2] ~ as.character(results[[4]][,1]), results[4], mean)
-for(i in 1:3){rmseResults[i,1] <- paste(name, rmseResults[i,1])}
-rmseResults <- data.frame("DB"=rmseResults[,1], "rmse"=rmseResults[,2])
-rmseTable <- rbind(rmseTable, rmseResults)
-rsqDiffTable <- cbind(rsqDiffTable, resultsDiff(results[[3]], name, NA))
-time <- rbind(time, time.taken)
-rownames(results[[5]]) <- c(paste(name, rownames(results[[5]])[1]), paste(name, rownames(results[[5]])[2]), paste(name, rownames(results[[5]])[3]))
-coefficientsTemp <- cbind.data.frame(results[[5]], "SD" = results[[6]][1:3])
-coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
+for(i in 1:3){
+  name = myNames[i]
+  mixed = T
+  start.time <- Sys.time()
+  results <- knnMixedAnalysis(bt, tbl, indexesList$mc5_medium, T, binVars[i], k)
+  end.time <- Sys.time()
+  time.taken <- cbind(name, end.time-start.time, start.time, end.time)
+  time <- rbind(time, time.taken)
+  writeTables(name, results, mixed)
+  write.csv(as.data.frame(results[[1]]), paste(name, "rmseTable.csv", sep = "_"))
+}
 
-#lM5c2
-name = "lM5c2"
-start.time <- Sys.time()
-results <- knnMixedAnalysis(bt, tbl, indexesList$mc5_medium, F, 2, 3)
-end.time <- Sys.time()
-time.taken <- cbind(name, end.time-start.time, start.time, end.time)
-table <- resultsTable(data.frame(results[[1]]), c(name))
-graphme(setorder(results[[2]], ID), name, "knn", "r-squared value", "Based on 1000 samples. 1000 obs, 5 highly corr vars. Dependent var = continuous. 2 Binary variables.")
-rmseResults <- aggregate(results[[4]][,2] ~ as.character(results[[4]][,1]), results[4], mean)
-for(i in 1:3){rmseResults[i,1] <- paste(name, rmseResults[i,1])}
-rmseResults <- data.frame("DB"=rmseResults[,1], "rmse"=rmseResults[,2])
-rmseTable <- rbind(rmseTable, rmseResults)
-rsqDiffTable <- cbind(rsqDiffTable, resultsDiff(results[[3]], name, NA))
-time <- rbind(time, time.taken)
-rownames(results[[5]]) <- c(paste(name, rownames(results[[5]])[1]), paste(name, rownames(results[[5]])[2]), paste(name, rownames(results[[5]])[3]))
-coefficientsTemp <- cbind.data.frame(results[[5]], "SD" = results[[6]][1:3])
-coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
+myNames <- c("lM0d0", "lM0d4", "lM0d7")
+binVars <- c(1, 4, 7)
 
-#lM5c3
-name = "lM5c3"
-start.time <- Sys.time()
-results <- knnMixedAnalysis(bt, tbl, indexesList$mc5_medium, F, 3, 3)
-end.time <- Sys.time()
-time.taken <- cbind(name, end.time-start.time, start.time, end.time)
-table <- resultsTable(data.frame(results[[1]]), c(name))
-graphme(setorder(results[[2]], ID), name, "knn", "r-squared value", "Based on 1000 samples. 1000 obs, 5 highly corr vars. Dependent var = continuous. 3 Binary variables.")
-rmseResults <- aggregate(results[[4]][,2] ~ as.character(results[[4]][,1]), results[4], mean)
-for(i in 1:3){rmseResults[i,1] <- paste(name, rmseResults[i,1])}
-rmseResults <- data.frame("DB"=rmseResults[,1], "rmse"=rmseResults[,2])
-rmseTable <- rbind(rmseTable, rmseResults)
-rsqDiffTable <- cbind(rsqDiffTable, resultsDiff(results[[3]], name, NA))
-time <- rbind(time, time.taken)
-rownames(results[[5]]) <- c(paste(name, rownames(results[[5]])[1]), paste(name, rownames(results[[5]])[2]), paste(name, rownames(results[[5]])[3]))
-coefficientsTemp <- cbind.data.frame(results[[5]], "SD" = results[[6]][1:3])
-coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
+for(i in 1:3){
+  name = myNames[i]
+  start.time <- Sys.time()
+  results <- knnMixedAnalysis(bt, tbl, indexesList$mc10_medium, T, binVars[i], k)
+  end.time <- Sys.time()
+  time.taken <- cbind(name, end.time-start.time, start.time, end.time)
+  time <- rbind(time, time.taken)
+  writeTables(name, results)
+  write.csv(as.data.frame(results[[1]]), paste(name, "rmseTable.csv", sep = "_"))
+}
 
-#lM0c1
-name = "lM0c1"
-start.time <- Sys.time()
-results <- knnMixedAnalysis(bt, tbl, indexesList$mc10_medium, F, 1, 3)
-end.time <- Sys.time()
-time.taken <- cbind(name, end.time-start.time, start.time, end.time)
-table <- resultsTable(data.frame(results[[1]]), c(name))
-graphme(setorder(results[[2]], ID), name, "knn", "r-squared value", "Based on 1000 samples. 1000 obs, 10 highly corr vars. Dependent var = continuous. 1 Binary variable.")
-rmseResults <- aggregate(results[[4]][,2] ~ as.character(results[[4]][,1]), results[4], mean)
-for(i in 1:3){rmseResults[i,1] <- paste(name, rmseResults[i,1])}
-rmseResults <- data.frame("DB"=rmseResults[,1], "rmse"=rmseResults[,2])
-rmseTable <- rbind(rmseTable, rmseResults)
-rsqDiffTable <- cbind(rsqDiffTable, resultsDiff(results[[3]], name, NA))
-time <- rbind(time, time.taken)
-rownames(results[[5]]) <- c(paste(name, rownames(results[[5]])[1]), paste(name, rownames(results[[5]])[2]), paste(name, rownames(results[[5]])[3]))
-coefficientsTemp <- cbind.data.frame(results[[5]], "SD" = results[[6]][1:3])
-coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
-
-#lM0c4
-name = "lM0c4"
-start.time <- Sys.time()
-results <- knnMixedAnalysis(bt, tbl, indexesList$mc10_medium, F, 4, 3)
-end.time <- Sys.time()
-time.taken <- cbind(name, end.time-start.time, start.time, end.time)
-table <- resultsTable(data.frame(results[[1]]), c(name))
-graphme(setorder(results[[2]], ID), name, "knn", "r-squared value", "Based on 1000 samples. 1000 obs, 10 highly corr vars. Dependent var = continuous. 4 Binary variables.")
-rmseResults <- aggregate(results[[4]][,2] ~ as.character(results[[4]][,1]), results[4], mean)
-for(i in 1:3){rmseResults[i,1] <- paste(name, rmseResults[i,1])}
-rmseResults <- data.frame("DB"=rmseResults[,1], "rmse"=rmseResults[,2])
-rmseTable <- rbind(rmseTable, rmseResults)
-rsqDiffTable <- cbind(rsqDiffTable, resultsDiff(results[[3]], name, NA))
-time <- rbind(time, time.taken)
-rownames(results[[5]]) <- c(paste(name, rownames(results[[5]])[1]), paste(name, rownames(results[[5]])[2]), paste(name, rownames(results[[5]])[3]))
-coefficientsTemp <- cbind.data.frame(results[[5]], "SD" = results[[6]][1:3])
-coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
-
-#lM0c7
-name = "lM0c7"
-start.time <- Sys.time()
-results <- knnMixedAnalysis(bt, tbl, indexesList$mc10_medium, F, 7, 3)
-end.time <- Sys.time()
-time.taken <- cbind(name, end.time-start.time, start.time, end.time)
-table <- resultsTable(data.frame(results[[1]]), c(name))
-graphme(setorder(results[[2]], ID), name, "knn", "r-squared value", "Based on 1000 samples. 1000 obs, 10 highly corr vars. Dependent var = continuous. 7 Binary variables.")
-rmseResults <- aggregate(results[[4]][,2] ~ as.character(results[[4]][,1]), results[4], mean)
-for(i in 1:3){rmseResults[i,1] <- paste(name, rmseResults[i,1])}
-rmseResults <- data.frame("DB"=rmseResults[,1], "rmse"=rmseResults[,2])
-rmseTable <- rbind(rmseTable, rmseResults)
-rsqDiffTable <- cbind(rsqDiffTable, resultsDiff(results[[3]], name, NA))
-time <- rbind(time, time.taken)
-rownames(results[[5]]) <- c(paste(name, rownames(results[[5]])[1]), paste(name, rownames(results[[5]])[2]), paste(name, rownames(results[[5]])[3]))
-coefficientsTemp <- cbind.data.frame(results[[5]], "SD" = results[[6]][1:3])
-coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
-
-write.csv(as.data.frame(table), "knn-continuous-results.csv")
-write.csv(as.data.frame(rsqDiffTable), "knn-rsqDiffTable.csv")
-table <- c()
-residDiffTable <- c()
-
-#Mixed data
-#lM5d0
-name = "lM5d0"
-start.time <- Sys.time()
-results <- knnMixedAnalysis(bt, tbl, indexesList$mc5_medium, T, 0, 3)
-end.time <- Sys.time()
-time.taken <- cbind(name, end.time-start.time, start.time, end.time)
-table <- resultsTableMixed(data.frame(results[[1]]), c(name))
-graphme(setorder(results[[2]], ID), name, "knn", "residual deviance", "Based on 1000 samples. 1000 obs, 5 highly corr vars. Dep var is binary, rest are continuous.")
-rmseResults <- aggregate(results[[4]][,2] ~ as.character(results[[4]][,1]), results[4], mean)
-for(i in 1:3){rmseResults[i,1] <- paste(name, rmseResults[i,1])}
-rmseResults <- data.frame("DB"=rmseResults[,1], "rmse"=rmseResults[,2])
-rmseTable <- rbind(rmseTable, rmseResults)
-residDiffTable <- resultsDiff(results[[3]], name, "knn")
-time <- rbind(time, time.taken)
-rownames(results[[5]]) <- c(paste(name, rownames(results[[5]])[1]), paste(name, rownames(results[[5]])[2]), paste(name, rownames(results[[5]])[3]))
-coefficientsTemp <- cbind.data.frame(results[[5]], "SD" = results[[6]][1:3])
-coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
-
-#lM5d2
-name = "lM5d2"
-start.time <- Sys.time()
-results <- knnMixedAnalysis(bt, tbl, indexesList$mc5_medium, T, 2, 3)
-end.time <- Sys.time()
-time.taken <- cbind(name, end.time-start.time, start.time, end.time)
-table <- resultsTableMixed(data.frame(results[[1]]), c(name))
-graphme(setorder(results[[2]], ID), name, "knn", "residual deviance", "Based on 1000 samples. 1000 obs, 5 highly corr vars. Dependent var = binary. 2 Binary variables.")
-rmseResults <- aggregate(results[[4]][,2] ~ as.character(results[[4]][,1]), results[4], mean)
-for(i in 1:3){rmseResults[i,1] <- paste(name, rmseResults[i,1])}
-rmseResults <- data.frame("DB"=rmseResults[,1], "rmse"=rmseResults[,2])
-rmseTable <- rbind(rmseTable, rmseResults)
-residDiffTable <- cbind(residDiffTable, resultsDiff(results[[3]], name, NA))
-time <- rbind(time, time.taken)
-rownames(results[[5]]) <- c(paste(name, rownames(results[[5]])[1]), paste(name, rownames(results[[5]])[2]), paste(name, rownames(results[[5]])[3]))
-coefficientsTemp <- cbind.data.frame(results[[5]], "SD" = results[[6]][1:3])
-coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
-
-#lM5d3
-name = "lM5d3"
-start.time <- Sys.time()
-results <- knnMixedAnalysis(bt, tbl, indexesList$mc5_medium, T, 3, 3)
-end.time <- Sys.time()
-time.taken <- cbind(name, end.time-start.time, start.time, end.time)
-table <- resultsTableMixed(data.frame(results[[1]]), c(name))
-graphme(setorder(results[[2]], ID), name, "knn", "residual deviance", "Based on 1000 samples. 1000 obs, 5 highly corr vars. Dependent var = binary. 3 Binary variables.")
-rmseResults <- aggregate(results[[4]][,2] ~ as.character(results[[4]][,1]), results[4], mean)
-for(i in 1:3){rmseResults[i,1] <- paste(name, rmseResults[i,1])}
-rmseResults <- data.frame("DB"=rmseResults[,1], "rmse"=rmseResults[,2])
-rmseTable <- rbind(rmseTable, rmseResults)
-residDiffTable <- cbind(residDiffTable, resultsDiff(results[[3]], name, NA))
-time <- rbind(time, time.taken)
-rownames(results[[5]]) <- c(paste(name, rownames(results[[5]])[1]), paste(name, rownames(results[[5]])[2]), paste(name, rownames(results[[5]])[3]))
-coefficientsTemp <- cbind.data.frame(results[[5]], "SD" = results[[6]][1:3])
-coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
-
-#lM0d0
-name = "lM0d0"
-start.time <- Sys.time()
-results <- knnMixedAnalysis(bt, tbl, indexesList$mc10_medium, T, 0, 3)
-end.time <- Sys.time()
-time.taken <- cbind(name, end.time-start.time, start.time, end.time)
-table <- resultsTableMixed(data.frame(results[[1]]), c(name))
-graphme(setorder(results[[2]], ID), name, "knn", "residual deviance", "Based on 1000 samples. 1000 obs, 10 highly corr vars. Dep var is binary, rest are continuous.")
-rmseResults <- aggregate(results[[4]][,2] ~ as.character(results[[4]][,1]), results[4], mean)
-for(i in 1:3){rmseResults[i,1] <- paste(name, rmseResults[i,1])}
-rmseResults <- data.frame("DB"=rmseResults[,1], "rmse"=rmseResults[,2])
-rmseTable <- rbind(rmseTable, rmseResults)
-residDiffTable <- cbind(residDiffTable, resultsDiff(results[[3]], name, NA))
-time <- rbind(time, time.taken)
-rownames(results[[5]]) <- c(paste(name, rownames(results[[5]])[1]), paste(name, rownames(results[[5]])[2]), paste(name, rownames(results[[5]])[3]))
-coefficientsTemp <- cbind.data.frame(results[[5]], "SD" = results[[6]][1:3])
-coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
-
-#lM0d4
-name = "lM0d4"
-start.time <- Sys.time()
-results <- knnMixedAnalysis(bt, tbl, indexesList$mc10_medium, T, 4, 3)
-end.time <- Sys.time()
-time.taken <- cbind(name, end.time-start.time, start.time, end.time)
-table <- resultsTableMixed(data.frame(results[[1]]), c(name))
-graphme(setorder(results[[2]], ID), name, "knn", "residual deviance", "Based on 1000 samples. 1000 obs, 10 highly corr vars. Dependent var = binary. 4 Binary variables.")
-rmseResults <- aggregate(results[[4]][,2] ~ as.character(results[[4]][,1]), results[4], mean)
-for(i in 1:3){rmseResults[i,1] <- paste(name, rmseResults[i,1])}
-rmseResults <- data.frame("DB"=rmseResults[,1], "rmse"=rmseResults[,2])
-rmseTable <- rbind(rmseTable, rmseResults)
-residDiffTable <- cbind(residDiffTable, resultsDiff(results[[3]], name, NA))
-time <- rbind(time, time.taken)
-rownames(results[[5]]) <- c(paste(name, rownames(results[[5]])[1]), paste(name, rownames(results[[5]])[2]), paste(name, rownames(results[[5]])[3]))
-coefficientsTemp <- cbind.data.frame(results[[5]], "SD" = results[[6]][1:3])
-coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
-
-#lM0d7
-name = "lM0d7"
-start.time <- Sys.time()
-results <- knnMixedAnalysis(bt, tbl, indexesList$mc10_medium, T, 7, 3)
-end.time <- Sys.time()
-time.taken <- cbind(name, end.time-start.time, start.time, end.time)
-table <- resultsTableMixed(data.frame(results[[1]]), c(name))
-graphme(setorder(results[[2]], ID), name, "knn", "residual deviance", "Based on 1000 samples. 1000 obs, 10 highly corr vars. Dependent var = binary. 7 Binary variables.")
-rmseResults <- aggregate(results[[4]][,2] ~ as.character(results[[4]][,1]), results[4], mean)
-for(i in 1:3){rmseResults[i,1] <- paste(name, rmseResults[i,1])}
-rmseResults <- data.frame("DB"=rmseResults[,1], "rmse"=rmseResults[,2])
-rmseTable <- rbind(rmseTable, rmseResults)
-residDiffTable <- cbind(residDiffTable, resultsDiff(results[[3]], name, NA))
-time <- rbind(time, time.taken)
-rownames(results[[5]]) <- c(paste(name, rownames(results[[5]])[1]), paste(name, rownames(results[[5]])[2]), paste(name, rownames(results[[5]])[3]))
-coefficientsTemp <- cbind.data.frame(results[[5]], "SD" = results[[6]][1:3])
-coefficientsDiff <- rbind(coefficientsDiff, coefficientsTemp)
-names(time) <- c("DB", "Time taken", "Start time", "End time")
- 
-write.csv(as.data.frame(table), "knn-mixed-results.csv")
-write.csv(as.data.frame(residDiffTable), "knn-residDiffTable.csv")
-write.csv(as.data.frame(time), "knn-time.csv")
-write.csv(as.data.frame(rmseTable), "knn-rmseTable.csv")
-write.csv(as.data.frame(coefficientsDiff), "coefficientsDiff_knn.csv")
