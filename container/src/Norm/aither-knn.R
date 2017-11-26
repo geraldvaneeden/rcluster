@@ -3,7 +3,6 @@
 # install.packages('sn', repos = 'http://cran.mirror.ac.za')
 library(MASS)
 library(sn)
-library(snow)
 library(doMC)
 
 rm(list=ls())
@@ -19,7 +18,7 @@ depvar <- noquote(names(Sigma[colnum]))
 
 source('functionsNorm.R')
 
-clus <- makeCluster(c("10.2.0.26", "10.2.3.6", "10.2.4.6", "10.2.5.6", "10.2.7.6", "10.2.1.6", "10.2.2.8", "10.2.8.7", "10.2.6.6", "10.2.9.6"), master='10.2.0.26', type="SOCK")
+clus <- makeCluster(c("10.2.0.47", "10.2.3.20", "10.2.4.25", "10.2.5.27", "10.2.7.32", "10.2.1.21", "10.2.2.25", "10.2.6.23", "10.2.9.24"), master='10.2.0.47', type="SOCK")
 clusterExport(clus, c("st", "MCAR", "MAR", "MNAR", "regAnalysis", "complete", "calcP", "neighbour", "kNN", "knnAnalysis", "knnMixedAnalysis", "mice", "mice.impute.pmm", "mice.impute.norm", "logAnalysis", "resultsDiff", "rmse", "registerDoMC", "graphme", "resultsTable", "checkMethod", "genMixedData", "createFrames", "writeTables"))
 
 #CONTINUOUS DATA
@@ -43,12 +42,12 @@ n = 1000
 tbl <- matrix(1:n, 125, 8)
 k <- 3
 myNames <- c("sC5", "sC0", "lC5", "lC0", "vC5", "vC0")
-myIndexes <- c(indexesList$mc5_small, indexesList$mc10_small, indexesList$mc5_medium, indexesList$mc10_medium, indexesList$mc5_large, indexesList$mc10_large)
+myIndexes <- list(indexesList$mc5_small, indexesList$mc10_small, indexesList$mc5_medium, indexesList$mc10_medium, indexesList$mc5_large, indexesList$mc10_large)
 
 for(i in 1:6){
   name = myNames[i]
   start.time <- Sys.time()
-  results <- knnAnalysis(bt, tbl, myIndexes[i], k)
+  results <- knnAnalysis(bt, tbl, myIndexes[[i]], k)
   end.time <- Sys.time()
   time.taken <- cbind(name, end.time-start.time, start.time, end.time)
   time <- rbind(time, time.taken)
