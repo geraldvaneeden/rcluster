@@ -11,7 +11,6 @@ COPY ssh/config /root/.ssh/config
 RUN chmod 600 /root/.ssh/id_rsa && chmod 600 /root/.ssh/id_rsa.pub && chmod 600 /root/.ssh/authorized_keys
 
 ### Install packages
-COPY src/packages.R /usr/local/src/rscripts/packages.R
 RUN Rscript packages.R
 
 COPY src /usr/local/src/rscripts
